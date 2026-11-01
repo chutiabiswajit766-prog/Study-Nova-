@@ -1,0 +1,303 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with study settings, gamification stats, and preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The authenticated Firebase UID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email"
+        },
+        "selectedExam": {
+          "type": "string",
+          "description": "Active exam preparation target (JEE, NEET, UPSC, Boards, etc.)"
+        },
+        "targetLanguage": {
+          "type": "string",
+          "description": "Primary study language (English, Hindi, Hinglish, Assamese)"
+        },
+        "studyHoursPerDay": {
+          "type": "integer",
+          "description": "Target daily study hours"
+        },
+        "points": {
+          "type": "integer",
+          "description": "Accumulated gamification XP points"
+        },
+        "streakDays": {
+          "type": "integer",
+          "description": "Consecutive days studied"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Gamification level"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp; clients must submit FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["userId", "displayName", "selectedExam", "createdAt"]
+    },
+    "StudyMaterial": {
+      "title": "StudyMaterial",
+      "description": "Saved summary, revision note, formula sheet, or practice workspace",
+      "type": "object",
+      "properties": {
+        "materialId": {
+          "type": "string",
+          "description": "Unique material document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The owning user ID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the study item"
+        },
+        "topic": {
+          "type": "string",
+          "description": "Topic or concept name"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Academic subject"
+        },
+        "exam": {
+          "type": "string",
+          "description": "Target examination"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of material (summary, notes, formula_sheet, mcq_set, mind_map)"
+        },
+        "contentJson": {
+          "type": "string",
+          "description": "Formatted text or structured JSON content of the study material"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source origin (ai_generator, scanner, tutor, manual)"
+        },
+        "isFavorite": {
+          "type": "boolean",
+          "description": "Whether bookmarked as favorite"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp; clients must submit FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["materialId", "userId", "title", "contentJson", "createdAt"]
+    },
+    "Flashcard": {
+      "title": "Flashcard",
+      "description": "Flashcard for spaced repetition revision",
+      "type": "object",
+      "properties": {
+        "cardId": {
+          "type": "string",
+          "description": "Unique card document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID"
+        },
+        "deckName": {
+          "type": "string",
+          "description": "Deck or topic name"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Academic subject"
+        },
+        "front": {
+          "type": "string",
+          "description": "Front of card (question, term, formula)"
+        },
+        "back": {
+          "type": "string",
+          "description": "Back of card (answer, explanation)"
+        },
+        "difficulty": {
+          "type": "string",
+          "description": "Difficulty rating (EASY, MEDIUM, HARD)"
+        },
+        "repetitionLevel": {
+          "type": "integer",
+          "description": "Spaced repetition bucket level (0 to 5)"
+        },
+        "reviewCount": {
+          "type": "integer",
+          "description": "Number of times reviewed"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp; clients must submit FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["cardId", "userId", "deckName", "front", "back", "createdAt"]
+    },
+    "MockTestResult": {
+      "title": "MockTestResult",
+      "description": "Completed mock test or practice quiz session score record",
+      "type": "object",
+      "properties": {
+        "resultId": {
+          "type": "string",
+          "description": "Unique result document ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Test taker user ID"
+        },
+        "exam": {
+          "type": "string",
+          "description": "Examination target"
+        },
+        "subject": {
+          "type": "string",
+          "description": "Subject tested"
+        },
+        "totalQuestions": {
+          "type": "integer",
+          "description": "Total question count"
+        },
+        "correctAnswers": {
+          "type": "integer",
+          "description": "Number of correct responses"
+        },
+        "incorrectAnswers": {
+          "type": "integer",
+          "description": "Number of incorrect responses"
+        },
+        "unattempted": {
+          "type": "integer",
+          "description": "Number of unattempted questions"
+        },
+        "score": {
+          "type": "number",
+          "description": "Net score obtained"
+        },
+        "maxScore": {
+          "type": "number",
+          "description": "Maximum attainable score"
+        },
+        "percentage": {
+          "type": "number",
+          "description": "Score percentage"
+        },
+        "accuracy": {
+          "type": "number",
+          "description": "Accuracy percentage"
+        },
+        "timeTakenSeconds": {
+          "type": "integer",
+          "description": "Elapsed duration in seconds"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["resultId", "userId", "exam", "totalQuestions", "score", "createdAt"]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "Personalized study timetable and schedule",
+      "type": "object",
+      "properties": {
+        "planId": {
+          "type": "string",
+          "description": "Unique plan ID"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user ID"
+        },
+        "exam": {
+          "type": "string",
+          "description": "Exam name"
+        },
+        "targetDate": {
+          "type": "string",
+          "description": "Target exam date or target deadline"
+        },
+        "hoursPerDay": {
+          "type": "integer",
+          "description": "Target daily study hours"
+        },
+        "dailyTasksJson": {
+          "type": "string",
+          "description": "JSON serialized tasks and daily schedules"
+        },
+        "progressPercentage": {
+          "type": "number",
+          "description": "Plan progress percentage (0 to 100)"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp; clients must submit FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp; clients must submit FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["planId", "userId", "exam", "dailyTasksJson", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile with study settings, preferences, and gamification points"
+    },
+    "/users/{userId}/materials/{materialId}": {
+      "schema": { "$ref": "#/entities/StudyMaterial" },
+      "description": "Saved study workspaces, AI summaries, notes, formula sheets, and practice sets"
+    },
+    "/users/{userId}/flashcards/{cardId}": {
+      "schema": { "$ref": "#/entities/Flashcard" },
+      "description": "Spaced repetition flashcards with review statistics"
+    },
+    "/users/{userId}/mock_results/{resultId}": {
+      "schema": { "$ref": "#/entities/MockTestResult" },
+      "description": "Timed mock test and practice quiz results history"
+    },
+    "/users/{userId}/study_plans/{planId}": {
+      "schema": { "$ref": "#/entities/StudyPlan" },
+      "description": "Personalized daily and weekly study plans"
+    }
+  }
+}

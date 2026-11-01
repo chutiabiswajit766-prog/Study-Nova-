@@ -1,0 +1,6 @@
+{
+  "name": "StudyNova AI",
+  "description": "All-in-one AI education platform for competitive exams, smart document scanning, AI tutoring, mock tests, and revision.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

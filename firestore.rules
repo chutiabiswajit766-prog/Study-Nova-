@@ -1,0 +1,201 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 128)) &&
+             (!('selectedExam' in data) || (data.selectedExam is string && data.selectedExam.size() <= 50)) &&
+             (!('targetLanguage' in data) || (data.targetLanguage is string && data.targetLanguage.size() <= 50)) &&
+             (!('studyHoursPerDay' in data) || (data.studyHoursPerDay is int && data.studyHoursPerDay >= 0 && data.studyHoursPerDay <= 24)) &&
+             (!('points' in data) || (data.points is int && data.points >= 0)) &&
+             (!('streakDays' in data) || (data.streakDays is int && data.streakDays >= 0)) &&
+             (!('level' in data) || (data.level is int && data.level >= 1));
+    }
+
+    function isValidStudyMaterial(data) {
+      return data.materialId is string && data.materialId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             (!('topic' in data) || (data.topic is string && data.topic.size() <= 200)) &&
+             (!('subject' in data) || (data.subject is string && data.subject.size() <= 100)) &&
+             (!('exam' in data) || (data.exam is string && data.exam.size() <= 50)) &&
+             (!('type' in data) || (data.type is string && data.type.size() <= 50)) &&
+             data.contentJson is string && data.contentJson.size() <= 1000000 &&
+             (!('source' in data) || (data.source is string && data.source.size() <= 50)) &&
+             (!('isFavorite' in data) || data.isFavorite is bool);
+    }
+
+    function isValidFlashcard(data) {
+      return data.cardId is string && data.cardId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.deckName is string && data.deckName.size() <= 100 &&
+             (!('subject' in data) || (data.subject is string && data.subject.size() <= 100)) &&
+             data.front is string && data.front.size() <= 2000 &&
+             data.back is string && data.back.size() <= 5000 &&
+             (!('difficulty' in data) || (data.difficulty is string && data.difficulty.size() <= 20)) &&
+             (!('repetitionLevel' in data) || (data.repetitionLevel is int && data.repetitionLevel >= 0 && data.repetitionLevel <= 10)) &&
+             (!('reviewCount' in data) || (data.reviewCount is int && data.reviewCount >= 0));
+    }
+
+    function isValidMockTestResult(data) {
+      return data.resultId is string && data.resultId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.exam is string && data.exam.size() <= 50 &&
+             (!('subject' in data) || (data.subject is string && data.subject.size() <= 100)) &&
+             data.totalQuestions is int && data.totalQuestions >= 0 &&
+             (!('correctAnswers' in data) || data.correctAnswers is int) &&
+             (!('incorrectAnswers' in data) || data.incorrectAnswers is int) &&
+             (!('unattempted' in data) || data.unattempted is int) &&
+             (data.score is int || data.score is float) &&
+             (!('maxScore' in data) || (data.maxScore is int || data.maxScore is float)) &&
+             (!('percentage' in data) || (data.percentage is int || data.percentage is float)) &&
+             (!('accuracy' in data) || (data.accuracy is int || data.accuracy is float)) &&
+             (!('timeTakenSeconds' in data) || data.timeTakenSeconds is int);
+    }
+
+    function isValidStudyPlan(data) {
+      return data.planId is string && data.planId.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.exam is string && data.exam.size() <= 50 &&
+             (!('targetDate' in data) || (data.targetDate is string && data.targetDate.size() <= 50)) &&
+             (!('hoursPerDay' in data) || (data.hoursPerDay is int && data.hoursPerDay >= 0 && data.hoursPerDay <= 24)) &&
+             data.dailyTasksJson is string && data.dailyTasksJson.size() <= 500000 &&
+             (!('progressPercentage' in data) || (data.progressPercentage is int || data.progressPercentage is float));
+    }
+
+    // User profile document
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == userId &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       incoming().userId == userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       (!('updatedAt' in incoming()) || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time)) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'selectedExam', 'targetLanguage', 'studyHoursPerDay', 'points', 'streakDays', 'level', 'updatedAt']);
+
+      allow delete: if isOwner(userId);
+
+      // Study materials subcollection
+      match /materials/{materialId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(materialId) &&
+                         incoming().userId == userId &&
+                         incoming().materialId == materialId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidStudyMaterial(incoming());
+
+        allow update: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().materialId == materialId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (!('updatedAt' in incoming()) || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time)) &&
+                         isValidStudyMaterial(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'topic', 'subject', 'exam', 'type', 'contentJson', 'source', 'isFavorite', 'updatedAt']);
+
+        allow delete: if isOwner(userId);
+      }
+
+      // Flashcards subcollection
+      match /flashcards/{cardId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(cardId) &&
+                         incoming().userId == userId &&
+                         incoming().cardId == cardId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidFlashcard(incoming());
+
+        allow update: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().cardId == cardId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (!('updatedAt' in incoming()) || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time)) &&
+                         isValidFlashcard(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['deckName', 'subject', 'front', 'back', 'difficulty', 'repetitionLevel', 'reviewCount', 'updatedAt']);
+
+        allow delete: if isOwner(userId);
+      }
+
+      // Mock test results subcollection
+      match /mock_results/{resultId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(resultId) &&
+                         incoming().userId == userId &&
+                         incoming().resultId == resultId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidMockTestResult(incoming());
+
+        allow update: if false; // Immutable exam score log
+
+        allow delete: if isOwner(userId);
+      }
+
+      // Study plans subcollection
+      match /study_plans/{planId} {
+        allow get, list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(planId) &&
+                         incoming().userId == userId &&
+                         incoming().planId == planId &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidStudyPlan(incoming());
+
+        allow update: if isOwner(userId) &&
+                         incoming().userId == userId &&
+                         incoming().planId == planId &&
+                         incoming().createdAt == existing().createdAt &&
+                         (!('updatedAt' in incoming()) || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time)) &&
+                         isValidStudyPlan(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['exam', 'targetDate', 'hoursPerDay', 'dailyTasksJson', 'progressPercentage', 'updatedAt']);
+
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
