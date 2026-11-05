@@ -62,10 +62,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ai.GeminiAiService
 import com.example.ai.StudyWorkspaceResult
+import com.example.ai.subject.AcademicSubject
+import com.example.ai.subject.SubjectClassifier
 import com.example.data.model.StudyMaterial
 import com.example.ui.theme.NovaBlue
 import com.example.ui.theme.NovaCyan
 import com.example.ui.theme.NovaViolet
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.School
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,13 +149,119 @@ fun StudyGeneratorScreen(
           Spacer(modifier = Modifier.height(6.dp))
           OutlinedTextField(
             value = topic,
-            onValueChange = { topic = it },
-            placeholder = { Text("e.g. Photoelectric Effect, Newton's Laws, Carbonyl Compounds...") },
+            onValueChange = { 
+              topic = it 
+              val detected = SubjectClassifier.classifyTopic(it)
+              if (!detected.isAmbiguous && detected.subject != AcademicSubject.OTHER) {
+                selectedSubject = detected.subject.displayName
+              }
+            },
+            placeholder = { Text("e.g. Chemical Bonding, Newton's Laws, Differentiation, Photosynthesis...") },
             modifier = Modifier
               .fillMaxWidth()
               .testTag("topic_input_field"),
             shape = RoundedCornerShape(10.dp)
           )
+
+          val classification = remember(topic) {
+            if (topic.isNotBlank()) SubjectClassifier.classifyTopic(topic) else null
+          }
+          val mismatch = remember(topic, selectedSubject) {
+            if (topic.isNotBlank()) {
+              SubjectClassifier.checkSubjectMismatch(topic, AcademicSubject.fromString(selectedSubject))
+            } else null
+          }
+
+          if (classification?.isAmbiguous == true) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+              color = Color(0xFFFEF3C7),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(18.dp))
+                  Spacer(modifier = Modifier.width(6.dp))
+                  Text("Ambiguity Detected", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
+                }
+                Text(
+                  text = classification.clarificationPrompt ?: "Please pick a subject domain:",
+                  fontSize = 12.sp,
+                  color = Color(0xFF78350F),
+                  modifier = Modifier.padding(vertical = 4.dp)
+                )
+                classification.ambiguityOptions.forEach { opt ->
+                  Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .padding(vertical = 3.dp)
+                      .clickable {
+                        topic = opt
+                        val newClass = SubjectClassifier.classifyTopic(opt)
+                        if (newClass.subject != AcademicSubject.OTHER) {
+                          selectedSubject = newClass.subject.displayName
+                        }
+                      }
+                  ) {
+                    Text(
+                      text = "👉 $opt",
+                      fontSize = 12.sp,
+                      color = NovaBlue,
+                      fontWeight = FontWeight.Medium,
+                      modifier = Modifier.padding(8.dp)
+                    )
+                  }
+                }
+              }
+            }
+          } else if (mismatch?.isMismatch == true) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+              color = Color(0xFFEFF6FF),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Row(
+                modifier = Modifier.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(Icons.Default.School, contentDescription = null, tint = NovaBlue, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                  Text("Subject Lock Active", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = NovaBlue)
+                  Text(mismatch.explanation, fontSize = 11.sp, color = Color(0xFF1E3A8A))
+                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Button(
+                  onClick = { selectedSubject = mismatch.detectedSubject.displayName },
+                  colors = ButtonDefaults.buttonColors(containerColor = NovaBlue),
+                  shape = RoundedCornerShape(6.dp),
+                  modifier = Modifier.height(30.dp)
+                ) {
+                  Text("Lock", fontSize = 11.sp)
+                }
+              }
+            }
+          } else if (classification != null && classification.subject != AcademicSubject.OTHER) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Surface(
+                color = NovaBlue.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
+              ) {
+                Text(
+                  text = "📚 Subject: ${classification.subject.displayName} (${classification.educationLevel})",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = NovaBlue,
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+              }
+            }
+          }
 
           Spacer(modifier = Modifier.height(12.dp))
 
@@ -481,6 +591,76 @@ fun StudyGeneratorScreen(
                   Row(modifier = Modifier.padding(vertical = 4.dp)) {
                     Text("• ", fontWeight = FontWeight.Bold, color = NovaBlue)
                     Text(def, fontSize = 13.sp, lineHeight = 18.sp)
+                  }
+                }
+              }
+            }
+
+            if (res.keyPoints.isNotEmpty()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "High-Yield Core Concepts") {
+                for (kp in res.keyPoints) {
+                  Row(modifier = Modifier.padding(vertical = 3.dp)) {
+                    Text("✓ ", fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                    Text(kp, fontSize = 13.sp, lineHeight = 18.sp)
+                  }
+                }
+              }
+            }
+
+            if (res.examples.isNotEmpty()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "Worked Examples & Scientific Cases") {
+                for (ex in res.examples) {
+                  Surface(
+                    color = Color(0xFFF1F5F9),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                  ) {
+                    Text(ex, fontSize = 13.sp, modifier = Modifier.padding(10.dp), lineHeight = 18.sp)
+                  }
+                }
+              }
+            }
+
+            if (res.examOrientedNotes.isNotBlank()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "Exam-Oriented Strategy & Traps") {
+                Text(res.examOrientedNotes, fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurface)
+              }
+            }
+
+            if (res.commonMistakes.isNotEmpty()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "Common Mistakes to Avoid") {
+                for (cm in res.commonMistakes) {
+                  Row(modifier = Modifier.padding(vertical = 3.dp)) {
+                    Text("⚠ ", color = Color(0xFFEF4444))
+                    Text(cm, fontSize = 13.sp, lineHeight = 18.sp)
+                  }
+                }
+              }
+            }
+
+            if (res.quickRevisionSheet.isNotEmpty()) {
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "Quick Revision Sheet") {
+                for (qr in res.quickRevisionSheet) {
+                  Text("⚡ $qr", fontSize = 13.sp, modifier = Modifier.padding(vertical = 2.dp), fontWeight = FontWeight.Medium)
+                }
+              }
+            }
+
+            res.researchResult?.let { rr ->
+              Spacer(modifier = Modifier.height(12.dp))
+              WorkspaceSectionCard(title = "Authoritative Syllabus & Research Verification") {
+                Column {
+                  Text("Curriculum: ${rr.step2SyllabusRequirements}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = NovaBlue)
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Text(rr.researchTransparencyNotice, fontSize = 11.sp, color = Color.Gray)
+                  Spacer(modifier = Modifier.height(6.dp))
+                  for (ref in rr.step8References) {
+                    Text("• ${ref.sourceAuthority}: ${ref.documentOrCurriculum} (${ref.verifiedSyllabusAlignment})", fontSize = 12.sp)
                   }
                 }
               }

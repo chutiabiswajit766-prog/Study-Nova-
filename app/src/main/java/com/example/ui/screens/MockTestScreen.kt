@@ -373,17 +373,21 @@ fun MockTestScreen(
                       secondsRemaining = selectedDurationMinutes * 60
                       stage = TestStage.TESTING
                     }.onFailure { err ->
-                      // Fallback to sample PYQs if AI request faces rate limit
-                      val fallbacks = ExamRepository.samplePyqs.take(selectedQuestionCount)
-                      if (fallbacks.isNotEmpty()) {
-                        questions = fallbacks
+                      // Filter fallbacks strictly by the selected subject
+                      val subjectFallbacks = ExamRepository.samplePyqs.filter { 
+                        it.subject.equals(selectedSubject, ignoreCase = true) ||
+                        it.subject.contains(selectedSubject, ignoreCase = true) ||
+                        selectedSubject.contains(it.subject, ignoreCase = true)
+                      }
+                      if (subjectFallbacks.isNotEmpty()) {
+                        questions = subjectFallbacks.take(selectedQuestionCount)
                         currentQuestionIndex = 0
                         userAnswers.clear()
                         markedForReview.clear()
                         secondsRemaining = selectedDurationMinutes * 60
                         stage = TestStage.TESTING
                       } else {
-                        errorMessage = err.localizedMessage ?: "Failed to generate mock test."
+                        errorMessage = "Unable to generate $selectedSubject test: ${err.localizedMessage ?: "Please retry in a moment"}."
                       }
                     }
                   }

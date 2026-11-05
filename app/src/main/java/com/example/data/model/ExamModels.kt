@@ -150,16 +150,28 @@ object ExamRepository {
       source = "Verified NEET UG 2024 Official Paper"
     ),
     Question(
-      id = "pyq_upsc_2024_1",
-      exam = "UPSC Civil Services",
-      subject = "Polity & History",
-      topic = "Indian Constitution",
-      questionText = "Which Article of the Constitution of India safeguards one's right to marry the person of one's choice?",
-      options = listOf("Article 19", "Article 21", "Article 25", "Article 29"),
-      correctOptionIndex = 1,
-      explanation = "In the landmark Hadiya Case (Shafin Jahan v. Asokan K.M., 2018), the Supreme Court ruled that the right to marry a person of one's choice is integral to Article 21 (Right to Life and Personal Liberty).",
+      id = "pyq_chem_2024_1",
+      exam = "JEE Main & Advanced",
+      subject = "Chemistry",
+      topic = "Chemical Bonding & Molecular Structure",
+      questionText = "Which of the following molecules has a square planar shape according to VSEPR theory?",
+      options = listOf("XeF4", "SF4", "CH4", "BF3"),
+      correctOptionIndex = 0,
+      explanation = "Xenon tetrafluoride (XeF4) has 4 bond pairs and 2 lone pairs on the central Xe atom (sp3d2 hybridization), yielding an octahedral electron geometry with a square planar molecular geometry.",
       difficulty = "Medium",
-      source = "Verified UPSC CSE Prelims 2019/2024 Reference"
+      source = "Verified NTA Chemistry Reference"
+    ),
+    Question(
+      id = "pyq_math_2024_1",
+      exam = "JEE Main & Advanced",
+      subject = "Mathematics",
+      topic = "Differential Calculus",
+      questionText = "What is the derivative of f(x) = ln(sin(x)) with respect to x for 0 < x < pi?",
+      options = listOf("cot(x)", "tan(x)", "cos(x)/x", "-cosec^2(x)"),
+      correctOptionIndex = 0,
+      explanation = "Using the chain rule: d/dx[ln(sin(x))] = (1/sin(x)) * d/dx[sin(x)] = cos(x)/sin(x) = cot(x).",
+      difficulty = "Easy",
+      source = "Verified Mathematics Calculus Reference"
     )
   )
 
